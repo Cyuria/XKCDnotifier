@@ -1,0 +1,17 @@
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+body > * {
+  align-self: center;
+}
+
+.heading {
+  font-size: 500%;
+}
+
+.comic {
+  width: 50%;
+}
