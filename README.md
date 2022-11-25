@@ -7,7 +7,7 @@ The xkcd notifier automatically pulls up the most recent xkcd comic, if it hasn'
 ## Futher setup
 
 You can setup the XKCD notifier to run on a schedule using crontab in linux or task scheduler in windows.
-This is the intended use, I personally have it run upon login.
+This is the intended use, I personally have it run upon login. 
 
 ## How to build
 
