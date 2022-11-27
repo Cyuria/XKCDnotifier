@@ -3,9 +3,14 @@ const path = require('path');
 const https = require('https');
 const fs = require('fs');
 
+// Create sleep helper function
+const sleep = (waitTimeInMs) => new Promise(resolve => setTimeout(resolve, waitTimeInMs));
+
+// Create function to check if xkcd.com is available
 const xkcdCheckAccess = () => {
   const options = {
     host: "xkcd.com",
+    path: "/info.0.json"
   };
   return new Promise((resolve, reject) => {
     const request = https.get(options, response => {
@@ -17,11 +22,12 @@ const xkcdCheckAccess = () => {
   });
 };
 
+// Function to load electron window
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
-    fullscreen: true,
+    //fullscreen: true, // Uncomment to enable fullscreen window
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }
@@ -30,6 +36,7 @@ const createWindow = () => {
   win.loadFile('index.html');
 };
 
+// Function to check if the latest xkcd comic has been displayed
 const compareXKCD = latestComic => {
   if (!fs.existsSync(path.join(__dirname, 'lastComic.json'))) return true;
 
@@ -37,37 +44,45 @@ const compareXKCD = latestComic => {
   return latestComic.num !== lastComic.num;
 };
 
+// Function to load window if new xkcd comic available
 const loadIfXKCD = () => {
   const options = {
     host: "xkcd.com",
     path: "/info.0.json"
   };
 
+  // Get the latest xkcd comic
   https.request(options, res => {
     var out = '';
     res.on('data', chunk => { out += chunk; });
     res.on('end', () => {
+      // Check if it is a different comic
       const latestComic = JSON.parse(out);
       if (compareXKCD(latestComic)) {
+        // Write the new comic data to a file
         fs.writeFileSync(path.join(__dirname, 'lastComic.json'), JSON.stringify(latestComic));
+        // Create the electron window
         createWindow();
-      } else app.quit();
+      }
+      // Otherwise stop running
+      else app.quit();
     });
   }).end();
 };
 
-const waitUntilConnection = () => {
-  // Check if connection to xkcd.com available
-  if (xkcdCheckAccess()) {
-    // Run main window loading functions
-    loadIfXKCD();
-    // MacOS stuff
-    app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
-
-  } else {
+// Function to wait until xkcd.com is available
+const waitUntilConnection = async () => {
+  // Check if xkcd.com is unavailable
+  while (!(await xkcdCheckAccess())) {
     // Wait ten seconds before checking again
-    setTimeout(waitUntilConnection, 10000);
+    await sleep(10000);
   }
+
+  // Run main window loading functions
+  loadIfXKCD();
+  // MacOS stuff
+  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+
 };
 
 app.whenReady().then(waitUntilConnection);

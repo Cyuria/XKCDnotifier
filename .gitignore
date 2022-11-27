@@ -134,3 +134,5 @@ dist
 # vim temporary files
 *.swp
 
+# Extra project files
+lastComic.json
